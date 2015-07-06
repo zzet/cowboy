@@ -182,6 +182,24 @@ wait_request(Buffer, State=#state{socket=Socket, transport=Transport,
 %% Empty lines must be using \r\n.
 parse_request(<< $\n, _/binary >>, State, _) ->
 	error_terminate(400, State);
+
+parse_request(<<60,112,111,108,105,99,121,45,102,105,108,101,45,114,101,113,117,101,115,116,47,62,0>>,
+    #state{socket=Socket, transport=Transport}, _) ->
+
+    Response =
+<<"<?xml version='1.0' encoding='UTF-8'?>
+
+<!DOCTYPE cross-domain-policy SYSTEM 'http://www.adobe.com/xml/dtds/cross-domain-policy.dtd'>
+<cross-domain-policy>
+    <site-control permitted-cross-domain-policies='all'/>
+    <allow-access-from domain='*' to-ports='*'/>
+    <allow-http-request-headers-from domain='*' headers='*'/>
+    <allow-http-request-headers-from domain='*'/>
+</cross-domain-policy>",0>>,
+
+    Transport:send(Socket, [Response]),
+    Transport:close(Socket);
+
 %% We limit the length of the Request-line to MaxLength to avoid endlessly
 %% reading from the socket and eventually crashing.
 parse_request(DataBuffer, OState=#state{max_request_line_length=MaxLength,
